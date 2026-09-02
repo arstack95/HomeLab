@@ -18,6 +18,9 @@
   
       -Downloaded VirtualBox software and Windows Server ISO; set Network to Bridged Adapter to be discoverable on home network
       -Configured VM Server Role to Active Directory Domain Services
+      -Set a Static IP Address for the Server for easy connection
+      -Promoted the Sever to Domain Controller
+      
   Problems and Fixes
   
       -Dual-booted Windows was missing dependencies for VirtualBox - Fixed by downloading/installing Microsoft Visual C++  
