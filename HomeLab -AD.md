@@ -20,6 +20,7 @@
       -Configured VM Server Role to Active Directory Domain Services
       -Set a Static IP Address for the Server for easy connection
       -Promoted the Sever to Domain Controller
+      -Pinged the server from multiple devices to verify functionality
       
   Problems and Fixes
   
