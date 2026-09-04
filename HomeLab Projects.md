@@ -58,20 +58,9 @@ I couldn't log into the Pi over the network. The tool I was using to set up the 
 
 My "permanent" network address kept undoing itself every time the Pi restarted. Something running in the background was quietly resetting my settings back to default on every reboot. Once I found what was doing that and told it to stop, the address finally stuck.
 
-The Pi-hole installer kept freezing partway through. A few different things caused this at different points, but the pattern I learned was: don't just keep re-running the same command and hoping. I checked whether anything was actually happening in the background (there's a way to see what's using the computer's processing power in real time), and when nothing was, I knew it had actually died rather than just being slow.
+The Pi-hole installer kept freezing partway through. A few different things caused this at different points, but the pattern I learned was: don't just keep re-running the same command and hoping. I checked whether anything was actually happening in the background (using the top command), and when nothing was, I knew it had actually died rather than just being slow. As it turned out - it was a combination of lack of root permissions on the install, and bad piping on the install command that were causing it.
 
-Once installed, the website that manages Pi-hole gave me a "Forbidden" error. This one taught me the most, honestly. Two different pieces of software both wanted to use the same "door" (a network port) to talk to my browser, and only one of them was supposed to still be around. I found a command that tells you exactly which program is using which door, right that second, no guessing involved. Once I saw which one shouldn't have been there, I turned it off, and the correct one took over the door and started working.
-
-The pattern I noticed, doing this over and over
-
-Every time something broke, the fix came from the same basic steps:
-
-Figure out exactly what kind of "broken" I'm looking at (nothing responding at all is different from something responding but saying no).
-Check whether the thing is even turned on and running before assuming it's broken.
-Look at what the settings actually say, instead of assuming I remember correctly.
-Ask the computer directly what's happening right now, instead of guessing.
-
-That last one ended up being the most useful lesson of the whole project — there's almost always a way to just ask the system for the truth instead of debating with yourself about what might be wrong.
+Once installed, the website that manages Pi-hole gave me a "Forbidden" error. This one taught me the most, honestly. Two different pieces of software both wanted to use the same "door" (a network port) to talk to my browser, and only one of them was supposed to still be around. I found a command that tells you exactly which program is using which port. Once I saw which one shouldn't have been there, I turned it off, and the correct one took over the door and started working.
 
 ### What's next
 Set up a second small project to practice using a support ticket system
