@@ -1,26 +1,27 @@
 Active Directory Home Lab
 What it is
+A self-contained Active Directory environment running as a virtual machine on my Mac, used to get hands-on practice with Windows Server administration and virtualization.
 
-A small practice version of the kind of system many companies use to manage employee accounts and logins across their network, built on a virtual computer running inside my own laptop.
+Why
+To get real, hands-on experience with Active Directory and virtualization rather than relying on coursework alone — this is core infrastructure for a lot of IT support and sysadmin roles, and I hadn't touched it directly before this.
 
-Why I built it
+Stack
+2020 MacBook Air, dual-booted into Windows 10 Pro
+VirtualBox
+Windows Server 2025 (evaluation ISO)
 
-I wanted real hands-on experience with this kind of system rather than just reading about it. It's a big part of how a lot of company networks are actually run, and I hadn't worked with it directly before.
+Setup
+Installed VirtualBox and downloaded the Windows Server 2025 ISO
+Set the VM's network adapter to Bridged Adapter mode, so the VM gets its own address on the home network and is reachable from other devices, rather than being isolated behind NAT
+Installed Windows Server inside the VM
+Set a static IP address on the server for a consistent, predictable connection
+Installed the Active Directory Domain Services role
+Promoted the server to a Domain Controller — the point where it stopped being a standalone Windows machine and became the system responsible for managing accounts, logins, and permissions for the network
+Verified it was reachable by pinging the server from multiple other devices on the network
 
-What I used
-My own laptop (a Mac, running Windows through dual-boot)
-VirtualBox, free software that lets you run a whole separate "virtual" computer inside your real one
-Windows Server, the version of Windows built to run this kind of network management system
-What I actually did
-Installed VirtualBox and set up a virtual computer inside it, running Windows Server
-Made sure that virtual computer could be seen and reached by other devices on my home network, the same as any real computer would be
-Gave it a fixed, permanent address on the network so it wouldn't change later and stop working
-Turned that virtual computer into what's called a "Domain Controller" — this is the moment it stopped being just a regular Windows computer and became the system in charge of managing user accounts and logins for the network
-Tested it by connecting to it from a few other devices, to make sure it was actually reachable
-What went wrong (and what I learned)
+Problems & fixes
+The dual-booted Windows installation was missing dependencies required by VirtualBox. Fixed by installing the Microsoft Visual C++ Redistributable.
 
-Windows, installed through dual-boot on my Mac, was missing a piece of software that VirtualBox needed to run properly. I tracked down what was missing (a small Microsoft software package) and installed it, which fixed the issue.
-
-What's next
-Practice creating groups of users and setting rules for what different people are allowed to access
-Connect a real device to this system and log in with an account I create on it, to see the whole process work end to end
+Next
+Set up Organizational Units, security groups, and Group Policy to simulate a small fictional corporate environment
+Join a real client machine to the domain to practice logins and permissions end-to-end
