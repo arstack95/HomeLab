@@ -1,2 +1,65 @@
-# HomeLab Project 2 - PiHole Network-Wide DNS/Adblocker
+# Pi-hole Setup
 
+## What it is
+Network-wide DNS ad-blocker running on a Raspberry Pi 4, on a static local IP, serving as the DNS resolver for devices on my home network.
+
+## Why
+Wanted hands-on practice with DNS, Linux service management, and general Raspberry Pi administration — and a genuinely useful always-on service out of it.
+
+## Stack
+- Raspberry Pi 4
+- Ubuntu Server 24.04 LTS (64-bit ARM), booting from a USB SSD
+- Pi-hole v6 (built-in FTL webserver, no separate lighttpd/PHP stack)
+- Upstream DNS: Cloudflare (1.1.1.1)
+
+## Setup, roughly in order
+- Flashed Ubuntu Server 24.04 LTS to a USB SSD via Raspberry Pi Imager
+- Set a static local IP (192.168.1.50) via Netplan, with cloud-init's network management disabled so the config survives reboots
+- Ran the official Pi-hole installer, selected `eth0` as the interface, Cloudflare as upstream DNS, query logging on, privacy level set to "hide domains and clients"
+- Verified filtering works via `dig` against a known ad-tracking domain
+- Pointed devices' DNS settings manually to 192.168.1.50 (router-level DNS override wasn't available — see below)
+
+## Problems & fixes
+
+**MicroSD card physically snapped**
+Original SD card broke while handling it. Since the Pi 4 supports USB boot, moved to a USB SSD instead — more reliable for a server workload than SD anyway.
+
+**USB drive wouldn't boot (4 blinking green LEDs on a loop)**
+That blink pattern is a documented Pi diagnostic code for "no bootable image found." Root cause: the Pi's bootloader firmware didn't have USB boot enabled (common on Pi 4 units that haven't had a firmware update). Fix required a *second*, temporary SD card just to boot once, run `sudo rpi-eeprom-update -a`, and set boot order (SD → USB) via `raspi-config` — after that, USB booted normally.
+
+**Couldn't SSH into the temporary SD card setup (`Connection refused`, later `Permission denied`)**
+Raspberry Pi Imager's OS customization (username/password/SSH settings) silently failed to save on more than one flash attempt — the write completed, but the settings never got baked into the image. Diagnosed by checking for `userconf.txt` in the boot partition and finding it missing. Fixed by manually creating `userconf.txt` (with a password hash from `openssl passwd -6`) and an empty `ssh` file directly in the boot partition, bypassing Imager's customization step entirely.
+
+**Wasted time editing `user-data` (cloud-init file) on Raspberry Pi OS**
+`user-data` is a cloud-init mechanism used by Ubuntu images — Raspberry Pi OS doesn't use cloud-init at all, so editing that file did nothing. Lesson: confirm which first-boot mechanism an image actually uses before editing its config (`userconf.txt`/`firstrun.sh` for Raspberry Pi OS vs. `user-data` for Ubuntu).
+
+**Ethernet showing "disconnected" at the router despite the Pi appearing to run fine**
+Physical link issue — Pi was plugged into the 1G Ethernet port instead of the 2.5G port. Moving it to the correct port and eventually reseating the cable resolved it. Learned to check port-level link lights directly rather than trusting OS-level status alone.
+
+**Static IP kept reverting to DHCP after every reboot**
+Ubuntu Server's cloud-init regenerates `/etc/netplan/50-cloud-init.yaml` on every boot, silently overwriting manual edits. Fixed by creating `/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg` with `network: {config: disabled}` to stop cloud-init from managing networking at all, then reapplying the static IP config, which finally persisted across reboots.
+
+**`.local` hostname wouldn't resolve, but the IP worked fine**
+Ubuntu Server doesn't ship with `avahi-daemon` (mDNS) running by default the way Raspberry Pi OS does. Worked around it by just using the IP directly; optionally fixable with `sudo apt install avahi-daemon`.
+
+**Pi-hole installer repeatedly stalled at "Installing Pi-hole dependency package"**
+Multiple causes stacked here:
+- First stall: an earlier install attempt had been interrupted, leaving `dpkg` in an inconsistent state (fixed with `sudo dpkg --configure -a` and `sudo apt install -f`).
+- Second stall: the installer appeared to hang with zero CPU activity (confirmed via `top` and `ps aux`) even after the dpkg cleanup. Installing the core dependencies manually (`dnsmasq`, `lighttpd`, `php`, etc.) directly via `apt` worked fine, isolating the problem to Pi-hole's wrapper script rather than `apt`/`dpkg` itself.
+- Third attempt: ran the installer with explicit `sudo` instead of relying on the piped script to self-elevate, still stalled.
+- Actual fix: downloaded the installer script to a file (`curl -o pihole-install.sh`) and ran it directly with `sudo bash pihole-install.sh` instead of the piped `curl | bash` pattern — this run completed successfully. Root cause of the piped version's failure was never fully confirmed, but running from a saved file avoided it entirely.
+
+**Dashboard returned 403 Forbidden after a successful install**
+Pi-hole v6 replaced the old lighttpd/PHP-based dashboard with a built-in webserver inside the `pihole-FTL` service — but `lighttpd` was still installed and running from earlier in the process, and had already claimed port 80. Pi-hole's webserver config marks port 80 as *optional* (`80o`), so FTL just silently skipped binding to it rather than erroring, leaving lighttpd to serve its default "unconfigured" page (hence the 403). Diagnosed by checking `ss -tlnp | grep ':80'` and seeing `lighttpd` holding the port instead of `pihole-FTL`. Fixed by stopping and disabling `lighttpd` and restarting `pihole-FTL`, which then bound to port 80 correctly.
+
+## The general troubleshooting pattern behind all of this
+1. Identify the exact failure mode (timeout vs. refused vs. forbidden vs. wrong content) — each points somewhere different.
+2. Check whether the relevant service is actually running (`systemctl status`) before assuming anything is broken.
+3. Read the actual config file rather than assuming what it says.
+4. Ask the OS directly for ground truth (`ss`, `ps`, `lsof`) rather than reasoning abstractly about what "should" be happening.
+5. When the config's intent and the OS's reality disagree, that gap is where the bug lives.
+
+## Next
+- Consider adding Unbound for recursive DNS instead of relying on Cloudflare as upstream
+- Add WireGuard for remote access practice
+- Set up osTicket to get hands-on with a ticketing system
