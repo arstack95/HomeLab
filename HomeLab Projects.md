@@ -1,4 +1,4 @@
-### Active Directory Home Lab
+# Active Directory Home Lab
 
 ### What it is
  A self-contained Active Directory environment running as a virtual machine on my Mac, used to get hands-on practice with Windows Server administration and virtualization.
@@ -28,7 +28,7 @@ Set up Organizational Units, security groups, and Group Policy to simulate a sma
  Join a real client machine to the domain to practice logins and permissions end-to-end
 
 
-### Network Wide DNS/Adblocker via Pi-Hole 
+# Network Wide DNS/Adblocker via Pi-Hole 
 
 ### What it is
 
